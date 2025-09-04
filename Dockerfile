@@ -1,9 +1,12 @@
+# Use a slim Python base image
 FROM python:3.11-slim
 
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+# Environment settings
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
-RUN apt-get update && apt-get install -y \
+# Install required system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1-mesa-dev \
     libsm6 \
     libsdl2-dev \
@@ -13,13 +16,22 @@ RUN apt-get update && apt-get install -y \
     libxext6 \
     libxrender-dev \
     python3-dev \
-    && rm -rf /var/lib/apt/lists/*
+ && rm -rf /var/lib/apt/lists/*
 
+# Set working directory
 WORKDIR /app
 
+# Install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
+# Copy application code
 COPY . .
 
+# Use a non-root user for security 
+RUN useradd -m appuser
+USER appuser
+
+# Define default command
 CMD ["python", "snake.py"]
