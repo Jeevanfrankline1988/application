@@ -1,11 +1,11 @@
-# Use a slim Python base image
+# Use slim Python base image
 FROM python:3.11-slim
 
 # Environment settings
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
-# Install required system dependencies
+# Install required system dependencies (alphabetically sorted )
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1-mesa-dev \
     libsm6 \
@@ -29,9 +29,9 @@ RUN pip install --upgrade pip && \
 # Copy application code
 COPY . .
 
-# Use a non-root user for security 
+# Security best practice: use non-root user
 RUN useradd -m appuser
 USER appuser
 
-# Define default command
+# Run the application
 CMD ["python", "snake.py"]
