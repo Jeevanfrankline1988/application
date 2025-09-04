@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pygame
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pygame
+  template:
+    metadata:
+      labels:
+        app: pygame
+    spec:
+      containers:
+        - name: pygame
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.port }}
