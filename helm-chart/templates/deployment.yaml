@@ -12,9 +12,24 @@ spec:
       labels:
         app: pygame
     spec:
+      automountServiceAccountToken: false   
       containers:
         - name: pygame
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"   
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.service.port }}
+          resources:                       
+            requests:
+              cpu: "100m"                  
+              memory: "128Mi"              
+            limits:
+              cpu: "500m"                  
+              memory: "256Mi"               
+          volumeMounts:                     
+            - name: pygame-storage
+              mountPath: /data
+      volumes:
+        - name: pygame-storage
+          emptyDir: {}                     
+
