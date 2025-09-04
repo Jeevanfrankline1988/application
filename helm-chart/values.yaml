@@ -2,10 +2,21 @@ replicaCount: 1
 
 image:
   repository: jeevan725/pygame
-  tag: "latest"
+  tag: "v1.0.0"          # fixed version tag
   pullPolicy: IfNotPresent
 
 service:
   type: NodePort
   port: 5000
-  nodePort: 30080   
+  nodePort: 30080
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+    ephemeral-storage: "500Mi"
+  limits:
+    cpu: "500m"
+    memory: "256Mi"
+    ephemeral-storage: "1Gi"
+
