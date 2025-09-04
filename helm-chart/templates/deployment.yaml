@@ -1,35 +1,38 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: pygame
+  name: {{ include "pygame.fullname" . }}
+  labels:
+    app: {{ include "pygame.name" . }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: pygame
+      app: {{ include "pygame.name" . }}
   template:
     metadata:
       labels:
-        app: pygame
+        app: {{ include "pygame.name" . }}
     spec:
       automountServiceAccountToken: false
       containers:
-        - name: pygame
+        - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.service.port }}
           resources:
             requests:
-              cpu: "100m"
-              memory: "128Mi"
+              cpu: {{ .Values.resources.requests.cpu }}
+              memory: {{ .Values.resources.requests.memory }}
+              ephemeral-storage: {{ .Values.resources.requests["ephemeral-storage"] }}
             limits:
-              cpu: "500m"
-              memory: "256Mi"
+              cpu: {{ .Values.resources.limits.cpu }}
+              memory: {{ .Values.resources.limits.memory }}
+              ephemeral-storage: {{ .Values.resources.limits["ephemeral-storage"] }}
           volumeMounts:
             - name: pygame-storage
               mountPath: /data
       volumes:
         - name: pygame-storage
-          emptyDir:
-            sizeLimit: 1Gi
+          emptyDir: {}
