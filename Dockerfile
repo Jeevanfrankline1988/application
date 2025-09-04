@@ -8,12 +8,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Install required system dependencies (alphabetically sorted )
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1-mesa-dev \
-    libsm6 \
-    libsdl2-dev \
-    libsdl2-image-dev \
-    libsdl2-mixer-dev \
-    libsdl2-ttf-dev \
-    libxext6 \
+    #libsm6 \
+    #libsdl2-dev \
+    #libsdl2-image-dev \
+    #libsdl2-mixer-dev \
+    #libsdl2-ttf-dev \
+    #libxext6 \
     libxrender-dev \
     python3-dev \
  && rm -rf /var/lib/apt/lists/*
