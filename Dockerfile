@@ -16,4 +16,4 @@ RUN useradd -m appuser
 USER appuser
 
 # Run the application
-CMD ["python", "snake.py"]
+CMD ["python", "sgame.py"]
