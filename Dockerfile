@@ -8,7 +8,7 @@ RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 # Copy only required application code (avoid secrets)
-COPY snake.py .
+COPY sgame.py .
 # COPY app/ ./app   # if you have an app/ folder with modules
 
 # Security best practice: use non-root user
