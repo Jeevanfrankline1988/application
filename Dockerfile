@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y \
     libsdl2-mixer-dev \
     libsdl2-ttf-dev \
     && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 # Install Python dependencies
@@ -13,13 +14,16 @@ COPY requirements.txt .
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copy only required application code (avoid secrets)
+# Copy game + Flask wrapper
 COPY sgame.py .
-# COPY app/ ./app   # if you have an app/ folder with modules
+COPY app.py .
+
 EXPOSE 5000
+
 # Security best practice: use non-root user
 RUN useradd -m appuser
 USER appuser
 
-# Run the application
+# Run the Flask API
 CMD ["python", "app.py"]
+
