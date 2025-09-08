@@ -1,5 +1,11 @@
 FROM python:3.10-slim
-# Set working directory
+RUN apt-get update && apt-get install -y \
+    python3-dev \
+    libsdl2-dev \
+    libsdl2-image-dev \
+    libsdl2-mixer-dev \
+    libsdl2-ttf-dev \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 # Install Python dependencies
@@ -10,7 +16,7 @@ RUN pip install --upgrade pip && \
 # Copy only required application code (avoid secrets)
 COPY sgame.py .
 # COPY app/ ./app   # if you have an app/ folder with modules
-
+EXPOSE 5000
 # Security best practice: use non-root user
 RUN useradd -m appuser
 USER appuser
