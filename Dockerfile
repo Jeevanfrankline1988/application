@@ -15,7 +15,7 @@ RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 # Copy game + Flask wrapper
-COPY templates/sgame.py .
+COPY app/sgame.py .
 COPY templates/app.py .
 
 EXPOSE 5000
