@@ -1,17 +1,32 @@
-from flask import Flask, Response
+from flask import Flask, request, Response, send_from_directory
+import threading, time
 import sgame
 
 app = Flask(__name__)
 
 @app.route("/")
-def home():
-    return "Snake Game running! Visit /frame to see a snapshot."
+def index():
+    return send_from_directory(".", "index.html")
 
 @app.route("/frame")
 def frame():
-    sgame.update_game()
     img_bytes = sgame.render_frame()
     return Response(img_bytes, mimetype="image/jpeg")
+
+@app.route("/move", methods=["POST"])
+def move():
+    data = request.json
+    direction = data.get("direction")
+    if direction in ["UP", "DOWN", "LEFT", "RIGHT"]:
+        sgame.direction = direction
+    return {"status": "ok", "direction": sgame.direction}
+
+def game_loop():
+    while True:
+        sgame.update_game()
+        time.sleep(0.1)
+
+threading.Thread(target=game_loop, daemon=True).start()
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
