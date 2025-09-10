@@ -1,9 +1,50 @@
-from flask import Flask, render_template
-app = Flask(__name__)
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Snake Game 🐍</title>
+  <style>
+    body {
+      background: #111;
+      color: white;
+      text-align: center;
+      font-family: Arial, sans-serif;
+    }
+    img {
+      border: 3px solid #00ff00;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Snake Game 🐍</h1>
+  <p>Use arrow keys to move the snake</p>
+  <img id="game" src="/frame" width="600" height="400"/>
 
-@app.route("/")
-def home():
-    return render_template("index.html")  # Serve HTML/JS game
+  <script>
+    // Send arrow key presses to backend
+    document.addEventListener("keydown", e => {
+      const dir = {
+        ArrowUp: "UP",
+        ArrowDown: "DOWN",
+        ArrowLeft: "LEFT",
+        ArrowRight: "RIGHT"
+      }[e.key];
+      if (dir) {
+        fetch("/move", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({direction: dir})
+        });
+      }
+    });
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    // Refresh image to simulate animation
+    setInterval(() => {
+      document.getElementById("game").src = "/frame?ts=" + Date.now();
+    }, 100); // 10 fps
+  </script>
+</body>
+</html>
+
