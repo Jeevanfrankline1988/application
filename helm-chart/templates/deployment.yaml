@@ -23,7 +23,7 @@ spec:
             - containerPort: {{ .Values.service.port }}
           env:
             - name: SDL_VIDEODRIVER
-              value: "dummy"   # Enable headless mode for Pygame
+              value: "dummy"   # Headless mode for Pygame
           resources:
             requests:
               cpu: {{ .Values.resources.requests.cpu }}
@@ -33,14 +33,11 @@ spec:
               cpu: {{ .Values.resources.limits.cpu }}
               memory: {{ .Values.resources.limits.memory }}
               ephemeral-storage: {{ index .Values.resources.limits "ephemeral-storage" }}
-          volumeMounts:
-            - name: pygame-storage
-              mountPath: /data
           livenessProbe:
             httpGet:
               path: /
               port: {{ .Values.service.port }}
-            initialDelaySeconds: 10
+            initialDelaySeconds: 20   # give Flask time to start
             periodSeconds: 10
             timeoutSeconds: 3
             failureThreshold: 3
@@ -48,10 +45,7 @@ spec:
             httpGet:
               path: /
               port: {{ .Values.service.port }}
-            initialDelaySeconds: 5
+            initialDelaySeconds: 15
             periodSeconds: 5
             timeoutSeconds: 2
-            failureThreshold: 3    
-      volumes:
-        - name: pygame-storage
-          emptyDir: {}
+            failureThreshold: 3
