@@ -3,37 +3,45 @@
 <head>
     <title>Snake Game</title>
     <style>
-        body { text-align:center; background:#222; color:#fff; font-family:sans-serif; }
-        canvas { background:#000; display:block; margin:20px auto; border:2px solid #fff; }
+        body { text-align: center; background: #222; color: #fff; font-family: sans-serif; }
+        canvas { background: #000; display: block; margin: 20px auto; border: 2px solid #fff; }
     </style>
 </head>
 <body>
-    <h1>Snake Game (Python → Browser)</h1>
+    <h1>Snake Game in Browser</h1>
     <canvas id="gameCanvas" width="400" height="400"></canvas>
     <p>Use arrow keys to move the snake</p>
 
     <script>
-        const canvas = document.getElementById("gameCanvas");
-        const ctx = canvas.getContext("2d");
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
 
-        function updateFrame() {
-            fetch("/frame")
-                .then(res => res.blob())
-                .then(blob => {
-                    const img = new Image();
-                    img.src = URL.createObjectURL(blob);
-                    img.onload = () => {
-                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    };
-                });
+        async function updateFrame() {
+            try {
+                const response = await fetch('/frame');
+                const blob = await response.blob();
+                const img = new Image();
+                img.onload = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0);
+                };
+                img.src = URL.createObjectURL(blob);
+            } catch (e) {
+                console.error('Error fetching frame:', e);
+            }
         }
 
-        // Refresh at ~10 FPS
-        setInterval(updateFrame, 100);
+        setInterval(updateFrame, 100); // ~10 FPS
 
-        // Send key presses to backend
-        document.addEventListener("keydown", (e) => {
-            fetch(`/keydown/${e.key}`);
+        document.addEventListener('keydown', (e) => {
+            let key = null;
+            switch(e.key) {
+                case 'ArrowUp': key = 'UP'; break;
+                case 'ArrowDown': key = 'DOWN'; break;
+                case 'ArrowLeft': key = 'LEFT'; break;
+                case 'ArrowRight': key = 'RIGHT'; break;
+            }
+            if (key) fetch(`/keydown/${key}`).catch(err => console.error(err));
         });
     </script>
 </body>
