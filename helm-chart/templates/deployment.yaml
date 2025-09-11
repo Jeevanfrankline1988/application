@@ -14,38 +14,10 @@ spec:
       labels:
         app: {{ include "pygame.name" . }}
     spec:
-      automountServiceAccountToken: false
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - containerPort: {{ .Values.service.port }}
-          env:
-            - name: SDL_VIDEODRIVER
-              value: "dummy"   # Headless mode for Pygame
-          resources:
-            requests:
-              cpu: {{ .Values.resources.requests.cpu }}
-              memory: {{ .Values.resources.requests.memory }}
-              ephemeral-storage: {{ index .Values.resources.requests "ephemeral-storage" }}
-            limits:
-              cpu: {{ .Values.resources.limits.cpu }}
-              memory: {{ .Values.resources.limits.memory }}
-              ephemeral-storage: {{ index .Values.resources.limits "ephemeral-storage" }}
-          livenessProbe:
-            httpGet:
-              path: /
-              port: {{ .Values.service.port }}
-            initialDelaySeconds: 20   # give Flask time to start
-            periodSeconds: 10
-            timeoutSeconds: 3
-            failureThreshold: 3
-          readinessProbe:
-            httpGet:
-              path: /
-              port: {{ .Values.service.port }}
-            initialDelaySeconds: 15
-            periodSeconds: 5
-            timeoutSeconds: 2
-            failureThreshold: 3
+            - containerPort: 5000
+          # No volumeMounts over /app — templates baked into the image will be visible
