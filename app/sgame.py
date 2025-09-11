@@ -1,88 +1,74 @@
-# app.py
-from flask import Flask, send_file, request
 import pygame
-import io
-from PIL import Image
-import random
+import numpy as np
 
-app = Flask(__name__)
+class SnakeGame:
+    def __init__(self, width=400, height=400, block_size=20):
+        self.width = width
+        self.height = height
+        self.block_size = block_size
+        self.reset()
 
-# ----- Pygame setup (off-screen surface) -----
-pygame.init()
-WIDTH, HEIGHT = 600, 400
-CELL_SIZE = 20
-screen = pygame.Surface((WIDTH, HEIGHT))  # Off-screen surface
+    def reset(self):
+        self.snake = [(self.width//2, self.height//2)]
+        self.direction = (0, -self.block_size)  # moving up initially
+        self.spawn_food()
+        self.game_over = False
 
-# Snake game state
-snake = [(WIDTH//2, HEIGHT//2)]
-direction = (0, -CELL_SIZE)
-food = (random.randrange(0, WIDTH, CELL_SIZE), random.randrange(0, HEIGHT, CELL_SIZE))
+    def spawn_food(self):
+        grid_x = self.width // self.block_size
+        grid_y = self.height // self.block_size
+        while True:
+            x = np.random.randint(0, grid_x) * self.block_size
+            y = np.random.randint(0, grid_y) * self.block_size
+            if (x, y) not in self.snake:
+                self.food = (x, y)
+                break
 
-# Colors
-BLACK = (0, 0, 0)
-GREEN = (0, 255, 0)
-RED = (255, 0, 0)
+    def step(self, action):
+        # action = "UP", "DOWN", "LEFT", "RIGHT"
+        if action == "UP" and self.direction != (0, self.block_size):
+            self.direction = (0, -self.block_size)
+        elif action == "DOWN" and self.direction != (0, -self.block_size):
+            self.direction = (0, self.block_size)
+        elif action == "LEFT" and self.direction != (self.block_size, 0):
+            self.direction = (-self.block_size, 0)
+        elif action == "RIGHT" and self.direction != (-self.block_size, 0):
+            self.direction = (self.block_size, 0)
 
-def update_game():
-    global snake, food
-    head_x, head_y = snake[0]
-    dx, dy = direction
-    new_head = (head_x + dx, head_y + dy)
+        # Move snake
+        head_x, head_y = self.snake[0]
+        dx, dy = self.direction
+        new_head = (head_x + dx, head_y + dy)
+        self.snake.insert(0, new_head)
 
-    # Wrap around screen edges
-    new_head = (new_head[0] % WIDTH, new_head[1] % HEIGHT)
+        # Check collisions
+        if (
+            new_head in self.snake[1:] or
+            not 0 <= new_head[0] < self.width or
+            not 0 <= new_head[1] < self.height
+        ):
+            self.game_over = True
 
-    # Check self-collision
-    if new_head in snake:
-        snake.clear()
-        snake.append((WIDTH//2, HEIGHT//2))
+        # Check food
+        if new_head == self.food:
+            self.spawn_food()
+        else:
+            self.snake.pop()  # remove tail
 
-    snake = [new_head] + snake[:-1]
+    def render_frame(self):
+        pygame.init()
+        surface = pygame.Surface((self.width, self.height))
+        surface.fill((0, 0, 0))  # black background
 
-    # Check food collision
-    if abs(new_head[0] - food[0]) < CELL_SIZE and abs(new_head[1] - food[1]) < CELL_SIZE:
-        snake.append(snake[-1])
-        food = (random.randrange(0, WIDTH, CELL_SIZE), random.randrange(0, HEIGHT, CELL_SIZE))
+        # Draw food
+        pygame.draw.rect(surface, (255, 0, 0), (*self.food, self.block_size, self.block_size))
 
-def draw_game():
-    screen.fill(BLACK)
-    for x, y in snake:
-        pygame.draw.rect(screen, GREEN, (x, y, CELL_SIZE, CELL_SIZE))
-    pygame.draw.rect(screen, RED, (food[0], food[1], CELL_SIZE, CELL_SIZE))
+        # Draw snake
+        for x, y in self.snake:
+            pygame.draw.rect(surface, (0, 255, 0), (x, y, self.block_size, self.block_size))
 
-def get_frame_bytes():
-    draw_game()
-    buf = io.BytesIO()
-    arr = pygame.surfarray.array3d(screen)
-    arr = arr.swapaxes(0,1)  # Pygame to PIL
-    im = Image.fromarray(arr).convert("RGB")
-    im.save(buf, format='PNG')
-    buf.seek(0)
-    return buf
-
-# ----- Flask routes -----
-@app.route("/frame")
-def frame():
-    update_game()
-    return send_file(get_frame_bytes(), mimetype='image/png')
-
-@app.route("/move", methods=["POST"])
-def move():
-    global direction
-    data = request.get_json()
-    dir_map = {
-        "UP": (0, -CELL_SIZE),
-        "DOWN": (0, CELL_SIZE),
-        "LEFT": (-CELL_SIZE, 0),
-        "RIGHT": (CELL_SIZE, 0)
-    }
-    if data["direction"] in dir_map:
-        new_dir = dir_map[data["direction"]]
-        # Prevent reversing
-        if (new_dir[0] != -direction[0] or new_dir[1] != -direction[1]):
-            direction = new_dir
-    return {"status": "ok"}
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
-
+        # Convert to RGB array
+        frame = pygame.surfarray.array3d(surface)
+        frame = np.rot90(frame, 3)  # rotate to correct orientation
+        frame = np.flip(frame, axis=1)
+        return frame
