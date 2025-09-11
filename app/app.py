@@ -4,17 +4,21 @@ import io
 from PIL import Image
 from sgame import SnakeGame
 
-app = Flask(__name__)  # Flask looks in /app/templates
+app = Flask(__name__)  # Looks in /app/templates
 game = SnakeGame()
 
 @app.route("/")
 def index():
-    return render_template("index.html")  # Loads index.html from /app/templates
+    return render_template("index.html")
 
 @app.route("/frame")
 def frame():
+    if game.game_over:
+        game.reset()  # Auto-restart
     game.step()
     surface = game.draw()
+
+    # Convert Pygame surface → PNG
     img_str = pygame.image.tostring(surface, "RGB")
     img = Image.frombytes("RGB", surface.get_size(), img_str)
     buf = io.BytesIO()
