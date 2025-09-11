@@ -4,12 +4,12 @@ import io
 from PIL import Image
 from sgame import SnakeGame
 
-app = Flask(__name__)  # Flask automatically looks in /app/templates/
+app = Flask(__name__)  # Flask looks in /app/templates
 game = SnakeGame()
 
 @app.route("/")
 def index():
-    return render_template("index.html")  # loads from /app/templates/index.html
+    return render_template("index.html")  # Loads index.html from /app/templates
 
 @app.route("/frame")
 def frame():
