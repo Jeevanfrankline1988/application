@@ -1,16 +1,35 @@
-from flask import Flask, render_template_string
+from flask import Flask, render_template, Response
+import pygame
+import io
+from PIL import Image
+from sgame import SnakeGame
 
 app = Flask(__name__)
+game = SnakeGame()
 
 @app.route("/")
 def index():
-    try:
-        # Read the HTML file we copied into /tmp
-        with open("/tmp/index.html", "r") as f:
-            html = f.read()
-        return render_template_string(html)
-    except Exception as e:
-        return f"<h1>Error loading index.html</h1><pre>{e}</pre>"
+    return render_template("index.html")
+
+@app.route("/frame")
+def frame():
+    game.step()
+    surface = game.draw()
+
+    # Convert Pygame surface → PNG bytes
+    img_str = pygame.image.tostring(surface, "RGB")
+    img = Image.frombytes("RGB", surface.get_size(), img_str)
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+
+    return Response(buf, mimetype="image/png")
+
+@app.route("/keydown/<key>")
+def keydown(key):
+    game.change_direction(key)
+    return "ok"
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000)
+
