@@ -16,7 +16,7 @@ RUN pip install --upgrade pip && \
 
 # Copy game + Flask wrapper
 COPY app/sgame.py .
-COPY templates/app.py .
+COPY app/app.py .
 
 EXPOSE 5000
 
