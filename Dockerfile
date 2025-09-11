@@ -18,6 +18,10 @@ RUN pip install --upgrade pip && \
 COPY app/sgame.py .
 COPY app/app.py .
 
+# Create templates directory and copy HTML
+RUN mkdir -p /app/templates
+COPY app/templates/index.html /app/templates/
+
 EXPOSE 5000
 
 # Security best practice: use non-root user
