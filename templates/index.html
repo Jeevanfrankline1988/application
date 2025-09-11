@@ -1,50 +1,79 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Snake Game 🐍</title>
-  <style>
-    body {
-      background: #111;
-      color: white;
-      text-align: center;
-      font-family: Arial, sans-serif;
+# app.py
+from flask import Flask, send_file, request
+import pygame
+import io
+from PIL import Image
+
+app = Flask(__name__)
+
+# ----- Pygame setup -----
+pygame.init()
+WIDTH, HEIGHT = 600, 400
+CELL_SIZE = 20
+screen = pygame.Surface((WIDTH, HEIGHT))  # Off-screen surface
+
+# Snake game variables
+snake = [(WIDTH//2, HEIGHT//2)]
+direction = (0, -CELL_SIZE)  # Start moving up
+food = (100, 100)
+
+# Colors
+BLACK = (0, 0, 0)
+GREEN = (0, 255, 0)
+RED = (255, 0, 0)
+
+def update_game():
+    global snake, food
+    # Move snake
+    head_x, head_y = snake[0]
+    dx, dy = direction
+    new_head = (head_x + dx, head_y + dy)
+    snake = [new_head] + snake[:-1]
+
+    # Check food collision
+    if abs(new_head[0] - food[0]) < CELL_SIZE and abs(new_head[1] - food[1]) < CELL_SIZE:
+        snake.append(snake[-1])
+        import random
+        food = (random.randrange(0, WIDTH, CELL_SIZE), random.randrange(0, HEIGHT, CELL_SIZE))
+
+def draw_game():
+    screen.fill(BLACK)
+    for x, y in snake:
+        pygame.draw.rect(screen, GREEN, (x, y, CELL_SIZE, CELL_SIZE))
+    pygame.draw.rect(screen, RED, (food[0], food[1], CELL_SIZE, CELL_SIZE))
+
+def get_frame_bytes():
+    draw_game()
+    buf = io.BytesIO()
+    img = pygame.surfarray.array3d(screen)
+    img = img.swapaxes(0, 1)  # Pygame to PIL orientation
+    im = Image.fromarray(img)
+    im.save(buf, format='PNG')
+    buf.seek(0)
+    return buf
+
+# ----- Flask routes -----
+@app.route("/frame")
+def frame():
+    update_game()
+    return send_file(get_frame_bytes(), mimetype='image/png')
+
+@app.route("/move", methods=["POST"])
+def move():
+    global direction
+    data = request.get_json()
+    dir_map = {
+        "UP": (0, -CELL_SIZE),
+        "DOWN": (0, CELL_SIZE),
+        "LEFT": (-CELL_SIZE, 0),
+        "RIGHT": (CELL_SIZE, 0)
     }
-    img {
-      border: 3px solid #00ff00;
-      border-radius: 8px;
-      margin-top: 20px;
-    }
-  </style>
-</head>
-<body>
-  <h1>Snake Game 🐍</h1>
-  <p>Use arrow keys to move the snake</p>
-  <img id="game" src="/frame" width="600" height="400"/>
+    if data["direction"] in dir_map:
+        # Prevent reverse
+        new_dir = dir_map[data["direction"]]
+        if (new_dir[0] != -direction[0] or new_dir[1] != -direction[1]):
+            direction = new_dir
+    return {"status": "ok"}
 
-  <script>
-    // Send arrow key presses to backend
-    document.addEventListener("keydown", e => {
-      const dir = {
-        ArrowUp: "UP",
-        ArrowDown: "DOWN",
-        ArrowLeft: "LEFT",
-        ArrowRight: "RIGHT"
-      }[e.key];
-      if (dir) {
-        fetch("/move", {
-          method: "POST",
-          headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({direction: dir})
-        });
-      }
-    });
-
-    // Refresh image to simulate animation
-    setInterval(() => {
-      document.getElementById("game").src = "/frame?ts=" + Date.now();
-    }, 100); // 10 fps
-  </script>
-</body>
-</html>
-
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
