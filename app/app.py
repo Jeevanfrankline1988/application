@@ -9,11 +9,15 @@ game = SnakeGame()
 
 @app.route("/")
 def index():
+    # Serve your HTML page from /app/templates/index.html
     return render_template("index.html")
 
 @app.route("/frame")
 def frame():
+    # Advance game state
     game.step()
+
+    # Draw Pygame surface
     surface = game.draw()
 
     # Convert Pygame surface → PNG bytes
@@ -23,7 +27,7 @@ def frame():
     img.save(buf, format="PNG")
     buf.seek(0)
 
-    return Response(buf, mimetype="image/png")
+    return Response(buf.getvalue(), mimetype="image/png")
 
 @app.route("/keydown/<key>")
 def keydown(key):
@@ -31,5 +35,5 @@ def keydown(key):
     return "ok"
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
-
+    # Listen on all interfaces for Kubernetes / SSH tunnel
+    app.run(host="0.0.0.0", port=5000, debug=True)
