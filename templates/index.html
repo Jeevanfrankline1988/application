@@ -8,80 +8,33 @@
     </style>
 </head>
 <body>
-    <h1>Snake Game in Browser</h1>
+    <h1>Snake Game (Python → Browser)</h1>
     <canvas id="gameCanvas" width="400" height="400"></canvas>
     <p>Use arrow keys to move the snake</p>
 
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
 
-        const blockSize = 20;
-        const width = canvas.width;
-        const height = canvas.height;
-
-        let snake = [{x: 200, y: 200}];
-        let direction = {x: 0, y: -blockSize}; // initially up
-        let food = spawnFood();
-        let gameOver = false;
-
-        function spawnFood() {
-            let x = Math.floor(Math.random() * (width / blockSize)) * blockSize;
-            let y = Math.floor(Math.random() * (height / blockSize)) * blockSize;
-            // ensure food is not on snake
-            while(snake.some(s => s.x === x && s.y === y)) {
-                x = Math.floor(Math.random() * (width / blockSize)) * blockSize;
-                y = Math.floor(Math.random() * (height / blockSize)) * blockSize;
-            }
-            return {x, y};
+        function updateFrame() {
+            fetch("/frame")
+                .then(res => res.blob())
+                .then(blob => {
+                    const img = new Image();
+                    img.src = URL.createObjectURL(blob);
+                    img.onload = () => {
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    };
+                });
         }
 
-        document.addEventListener('keydown', (e) => {
-            switch(e.key) {
-                case 'ArrowUp': if(direction.y === 0) direction = {x:0, y:-blockSize}; break;
-                case 'ArrowDown': if(direction.y === 0) direction = {x:0, y:blockSize}; break;
-                case 'ArrowLeft': if(direction.x === 0) direction = {x:-blockSize, y:0}; break;
-                case 'ArrowRight': if(direction.x === 0) direction = {x:blockSize, y:0}; break;
-            }
+        // Refresh at ~10 FPS
+        setInterval(updateFrame, 100);
+
+        // Send key presses to backend
+        document.addEventListener("keydown", (e) => {
+            fetch(`/keydown/${e.key}`);
         });
-
-        function gameLoop() {
-            if(gameOver) {
-                ctx.fillStyle = 'red';
-                ctx.font = '30px sans-serif';
-                ctx.fillText('Game Over!', width/4, height/2);
-                return;
-            }
-
-            // Move snake
-            const newHead = {x: snake[0].x + direction.x, y: snake[0].y + direction.y};
-            // Check collisions
-            if(newHead.x < 0 || newHead.x >= width || newHead.y < 0 || newHead.y >= height ||
-               snake.some(s => s.x === newHead.x && s.y === newHead.y)) {
-                gameOver = true;
-            }
-
-            snake.unshift(newHead);
-
-            // Check food
-            if(newHead.x === food.x && newHead.y === food.y) {
-                food = spawnFood();
-            } else {
-                snake.pop();
-            }
-
-            // Draw
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, width, height);
-
-            ctx.fillStyle = 'red';
-            ctx.fillRect(food.x, food.y, blockSize, blockSize);
-
-            ctx.fillStyle = 'lime';
-            snake.forEach(s => ctx.fillRect(s.x, s.y, blockSize, blockSize));
-        }
-
-        setInterval(gameLoop, 100);
     </script>
 </body>
 </html>
