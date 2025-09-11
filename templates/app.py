@@ -18,16 +18,20 @@ def move():
     data = request.json
     direction = data.get("direction")
     if direction in ["UP", "DOWN", "LEFT", "RIGHT"]:
-        sgame.direction = direction
+        # Prevent reversing direction instantly
+        if (sgame.direction, direction) not in [
+            ("UP","DOWN"), ("DOWN","UP"),
+            ("LEFT","RIGHT"), ("RIGHT","LEFT")
+        ]:
+            sgame.direction = direction
     return {"status": "ok", "direction": sgame.direction}
 
 def game_loop():
     while True:
         sgame.update_game()
-        time.sleep(0.1)
+        time.sleep(0.1)  # 10 FPS
 
 threading.Thread(target=game_loop, daemon=True).start()
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
-
