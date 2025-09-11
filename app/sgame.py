@@ -1,74 +1,74 @@
 import pygame
-import numpy as np
+import random
+
+# Game settings
+WIDTH, HEIGHT = 400, 400
+BLOCK_SIZE = 20
+
+# Colors
+BLACK = (0, 0, 0)
+GREEN = (0, 255, 0)
+RED = (255, 0, 0)
 
 class SnakeGame:
-    def __init__(self, width=400, height=400, block_size=20):
-        self.width = width
-        self.height = height
-        self.block_size = block_size
-        self.reset()
+    def __init__(self):
+        pygame.init()
+        self.display = pygame.Surface((WIDTH, HEIGHT))
+        self.clock = pygame.time.Clock()
 
-    def reset(self):
-        self.snake = [(self.width//2, self.height//2)]
-        self.direction = (0, -self.block_size)  # moving up initially
-        self.spawn_food()
+        self.snake = [(100, 100)]
+        self.direction = (BLOCK_SIZE, 0)  # moving right initially
+        self.food = self.spawn_food()
         self.game_over = False
 
     def spawn_food(self):
-        grid_x = self.width // self.block_size
-        grid_y = self.height // self.block_size
-        while True:
-            x = np.random.randint(0, grid_x) * self.block_size
-            y = np.random.randint(0, grid_y) * self.block_size
-            if (x, y) not in self.snake:
-                self.food = (x, y)
-                break
+        return (
+            random.randint(0, (WIDTH - BLOCK_SIZE) // BLOCK_SIZE) * BLOCK_SIZE,
+            random.randint(0, (HEIGHT - BLOCK_SIZE) // BLOCK_SIZE) * BLOCK_SIZE,
+        )
 
-    def step(self, action):
-        # action = "UP", "DOWN", "LEFT", "RIGHT"
-        if action == "UP" and self.direction != (0, self.block_size):
-            self.direction = (0, -self.block_size)
-        elif action == "DOWN" and self.direction != (0, -self.block_size):
-            self.direction = (0, self.block_size)
-        elif action == "LEFT" and self.direction != (self.block_size, 0):
-            self.direction = (-self.block_size, 0)
-        elif action == "RIGHT" and self.direction != (-self.block_size, 0):
-            self.direction = (self.block_size, 0)
+    def change_direction(self, key):
+        if key == "ArrowUp" and self.direction != (0, BLOCK_SIZE):
+            self.direction = (0, -BLOCK_SIZE)
+        elif key == "ArrowDown" and self.direction != (0, -BLOCK_SIZE):
+            self.direction = (0, BLOCK_SIZE)
+        elif key == "ArrowLeft" and self.direction != (BLOCK_SIZE, 0):
+            self.direction = (-BLOCK_SIZE, 0)
+        elif key == "ArrowRight" and self.direction != (-BLOCK_SIZE, 0):
+            self.direction = (BLOCK_SIZE, 0)
 
-        # Move snake
+    def step(self):
+        if self.game_over:
+            return
+
         head_x, head_y = self.snake[0]
         dx, dy = self.direction
         new_head = (head_x + dx, head_y + dy)
-        self.snake.insert(0, new_head)
 
-        # Check collisions
+        # Collisions
         if (
-            new_head in self.snake[1:] or
-            not 0 <= new_head[0] < self.width or
-            not 0 <= new_head[1] < self.height
+            new_head[0] < 0 or new_head[0] >= WIDTH
+            or new_head[1] < 0 or new_head[1] >= HEIGHT
+            or new_head in self.snake
         ):
             self.game_over = True
+            return
 
-        # Check food
+        self.snake.insert(0, new_head)
+
         if new_head == self.food:
-            self.spawn_food()
+            self.food = self.spawn_food()
         else:
-            self.snake.pop()  # remove tail
+            self.snake.pop()
 
-    def render_frame(self):
-        pygame.init()
-        surface = pygame.Surface((self.width, self.height))
-        surface.fill((0, 0, 0))  # black background
+    def draw(self):
+        self.display.fill(BLACK)
 
         # Draw food
-        pygame.draw.rect(surface, (255, 0, 0), (*self.food, self.block_size, self.block_size))
+        pygame.draw.rect(self.display, RED, (*self.food, BLOCK_SIZE, BLOCK_SIZE))
 
         # Draw snake
         for x, y in self.snake:
-            pygame.draw.rect(surface, (0, 255, 0), (x, y, self.block_size, self.block_size))
+            pygame.draw.rect(self.display, GREEN, (x, y, BLOCK_SIZE, BLOCK_SIZE))
 
-        # Convert to RGB array
-        frame = pygame.surfarray.array3d(surface)
-        frame = np.rot90(frame, 3)  # rotate to correct orientation
-        frame = np.flip(frame, axis=1)
-        return frame
+        return self.display
