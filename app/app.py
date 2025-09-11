@@ -1,73 +1,49 @@
-from flask import Flask, jsonify, request, render_template
-import random
+from flask import Flask, render_template, Response, request
+import cv2
+from sgame import SnakeGame
 import threading
-import time
+import numpy as np
 
 app = Flask(__name__)
-
-# ----- Game State -----
-WIDTH, HEIGHT = 600, 400
-CELL_SIZE = 20
-
-snake = [[WIDTH//2, HEIGHT//2]]
-direction = [0, -CELL_SIZE]  # moving up initially
-food = [random.randrange(0, WIDTH, CELL_SIZE), random.randrange(0, HEIGHT, CELL_SIZE)]
-
+game = SnakeGame()
 lock = threading.Lock()
+last_action = None
 
-def update_game():
-    global snake, food
+def generate_frames():
+    global last_action
     while True:
-        time.sleep(0.1)  # 10 FPS
         with lock:
-            # Move snake
-            head_x, head_y = snake[0]
-            dx, dy = direction
-            new_head = [(head_x + dx) % WIDTH, (head_y + dy) % HEIGHT]
+            if last_action:
+                game.step(last_action)
+                last_action = None
 
-            # Check self-collision
-            if new_head in snake:
-                snake[:] = [[WIDTH//2, HEIGHT//2]]  # reset snake
-                direction[:] = [0, -CELL_SIZE]
+            if game.game_over:
+                game.reset()
 
-            snake.insert(0, new_head)
+            frame = game.render_frame()
+            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+            ret, buffer = cv2.imencode('.jpg', frame)
+            frame_bytes = buffer.tobytes()
 
-            # Check food collision
-            if abs(new_head[0] - food[0]) < CELL_SIZE and abs(new_head[1] - food[1]) < CELL_SIZE:
-                food[:] = [random.randrange(0, WIDTH, CELL_SIZE), random.randrange(0, HEIGHT, CELL_SIZE)]
-            else:
-                snake.pop()  # remove tail
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
 
-# Start background thread
-threading.Thread(target=update_game, daemon=True).start()
-
-# ----- Flask Routes -----
-@app.route("/")
+@app.route('/')
 def index():
-    return render_template("index.html")
+    return render_template('index.html')
 
-@app.route("/state")
-def state():
-    with lock:
-        return jsonify({"snake": snake, "food": food})
+@app.route('/video_feed')
+def video_feed():
+    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
-@app.route("/move", methods=["POST"])
+@app.route('/move', methods=['POST'])
 def move():
-    global direction
-    data = request.get_json()
-    dir_map = {
-        "UP": [0, -CELL_SIZE],
-        "DOWN": [0, CELL_SIZE],
-        "LEFT": [-CELL_SIZE, 0],
-        "RIGHT": [CELL_SIZE, 0]
-    }
-    if data["direction"] in dir_map:
-        new_dir = dir_map[data["direction"]]
-        with lock:
-            # Prevent reversing
-            if new_dir[0] != -direction[0] or new_dir[1] != -direction[1]:
-                direction[:] = new_dir
+    global last_action
+    data = request.json
+    key = data.get('key')
+    with lock:
+        last_action = key
     return {"status": "ok"}
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, threaded=True)
