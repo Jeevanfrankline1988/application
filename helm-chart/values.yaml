@@ -1,14 +1,13 @@
-
+replicaCount: 1
 
 image:
   repository: jeevan725/pygame
-  tag: "v1.0.0"           # Pin version for stability
-  pullPolicy: IfNotPresent
+  tag: v182
+  pullPolicy: Always
 
 service:
-  type: NodePort          # Can change to ClusterIP / LoadBalancer later
-  port: 5000              # Flask app listens on 5000
-  nodePort: 30080         # Only used if type=NodePort
+  type: ClusterIP
+  port: 5000
 
 resources:
   requests:
